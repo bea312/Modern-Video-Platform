@@ -1,17 +1,17 @@
-import axios from "axios";
+import axios from 'axios'
 
-const API_KEY = import.meta.env.VITE_RAPID_API_KEY;
+const BASE_URL = 'https://youtube-v3-alternative.p.rapidapi.com'
 
-
-const youtubeAPI = axios.create({
-  baseURL: "https://youtube-v31.p.rapidapi.com",
+const apiClient = axios.create({
+  baseURL: BASE_URL,
+  params: { geo: 'US', lang: 'en' },
   headers: {
-    "X-RapidAPI-Key": API_KEY,
-    "X-RapidAPI-Host": "youtube-v31.p.rapidapi.com",
+    'X-RapidAPI-Key': import.meta.env.VITE_RAPIDAPI_KEY,
+    'X-RapidAPI-Host': 'youtube-v3-alternative.p.rapidapi.com',
   },
-});
+})
 
-export const fetchFromAPI = async (endpoint, params = {}) => {
-  const { data } = await youtubeAPI.get(endpoint, { params });
-  return data;
-};
+export const fetchFromAPI = async (endpoint) => {
+  const { data } = await apiClient.get(`/${endpoint}`)
+  return data
+}

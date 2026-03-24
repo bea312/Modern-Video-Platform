@@ -1,82 +1,37 @@
-import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { fetchFromAPI } from '../api/fetchFromAPI';
-import Sidebar from '../components/Layout/Sidebar';
-import CategoryPills from '../components/UI/CategoryPills';
-import VideoCard from '../components/Media/VideoCard';
-import Loader from '../components/Feedback/Loader';
-import ErrorBanner from '../components/Feedback/ErrorBanner';
-import categories from '../constants/categories';
+import React from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { fetchFromAPI } from '../api/fetchFromAPI'
+import VideoCard from '../components/Media/VideoCard'
+import Loader from '../components/Feedback/Loader'
 
-const Feed = ({ manualQuery }) => {
-  const [selectedCategory, setSelectedCategory] = useState(categories[0].name);
+const Feed = ({ selectedCategory }) => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['videos', selectedCategory],
+    queryFn: () => fetchFromAPI(`search?query=${selectedCategory}&type=video`),
+  })
 
-  const queryTerm = manualQuery || selectedCategory;
-
-  const queryKey = useMemo(
-    () => (manualQuery ? ['feed', 'search', manualQuery] : ['feed', 'category', selectedCategory]),
-    [manualQuery, selectedCategory]
-  );
-
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey,
-    queryFn: async () => {
-      if (manualQuery) {
-        return fetchFromAPI('search', {
-          part: 'snippet',
-          q: manualQuery,
-          maxResults: 20,
-          regionCode: 'US',
-          type: 'video'
-        });
-      }
-
-      if (selectedCategory === 'All') {
-        return fetchFromAPI('videos', {
-          part: 'snippet',
-          chart: 'mostPopular',
-          regionCode: 'US',
-          maxResults: 20
-        });
-      }
-
-      return fetchFromAPI('search', {
-        part: 'snippet',
-        q: selectedCategory,
-        maxResults: 20,
-        regionCode: 'US',
-        type: 'video'
-      });
-    },
-    keepPreviousData: true,
-    staleTime: 4 * 60 * 1000
-  });
-
-  const items = data?.items || [];
+  if (isLoading) return <Loader />
+  if (error) return <div className="text-center text-red-500">Error loading videos</div>
 
   return (
-    <div className="page-content">
-      <Sidebar selectedCategory={selectedCategory} onSelect={setSelectedCategory} />
-      <div className="feed-panel">
-        <CategoryPills activeCategory={selectedCategory} onChange={setSelectedCategory} />
-        <section className="section-header">
-          <div>
-            <h1>{manualQuery ? `Search results for "${manualQuery}"` : selectedCategory}</h1>
-         
-          </div>
-        </section>
-        {isLoading && <Loader />}
-        {isError && <ErrorBanner message={(error && error.message) || 'Unable to load videos.'} />}
-        {!isLoading && !isError && (
-          <div className="grid">
-            {items.map((item) => (
-              <VideoCard key={(item.id?.videoId || item.id)} video={item} />
-            ))}
-          </div>
-        )}
+    <div>
+      <div className="flex gap-4 mb-6 overflow-x-auto">
+        {['All', 'Music', 'Gaming', 'News'].map((filter) => (
+          <button
+            key={filter}
+            className="px-4 py-2 bg-gray-800 rounded-full whitespace-nowrap hover:bg-gray-700"
+          >
+            {filter}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {data?.data?.map((video) => (
+          <VideoCard key={video.videoId} video={video} />
+        ))}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Feed;
+export default Feed
